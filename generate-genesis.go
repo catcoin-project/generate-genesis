@@ -10,10 +10,13 @@ import (
 	"runtime/pprof"
 	"strconv"
 
+	"ekyu.moe/cryptonight"
+	"ekyu.moe/cryptonight/groestl"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
 	"lukechampine.com/blake3"
 
+	"github.com/aead/skein/skein256"
 	quark "github.com/mycroft/goquarkhash"
 	x11 "gitlab.com/nitya-sattva/go-x11"
 	"golang.org/x/crypto/scrypt"
@@ -31,7 +34,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&algo, "algo", "sha256d", "Algo to use: sha256d, blake, blake3d, blake2b, sha3, keccak, scrypt, x11, quark")
+	flag.StringVar(&algo, "algo", "sha256d", "Algo to use: sha256d, blake, blake3d, blake2b, sha3, keccak, scrypt, x11, quark, cryptonight (v1,v2,v3/R), groestl, skein")
 	flag.StringVar(&psz, "psz", "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks", "pszTimestamp")
 	flag.Uint64Var(&coins, "coins", uint64(50*100000000), "Number of coins")
 	flag.StringVar(&pubkey, "pubkey", "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f", "Pubkey (required)")
@@ -47,6 +50,19 @@ func ComputeSha256(content []byte) []byte {
 	m.Write(content)
 
 	return m.Sum(nil)
+}
+
+func ComputeCryptonight(content []byte, variant int) []byte {
+	return cryptonight.Sum(content, variant)
+}
+
+func ComputeGroestl(content []byte) []byte {
+	return groestl.New256().Sum(content)
+}
+
+func ComputeSkein(content []byte) []byte {
+	h := skein256.New256(content)
+	return h.Sum(content)
 }
 
 func ComputeScrypt(content []byte) []byte {
@@ -239,6 +255,17 @@ func SearchWorker(jobs <-chan Job, results chan<- bool) {
 			case "quark":
 				hash = quark.QuarkHash(blk.Serialize())
 				blk.Hash = hash
+			case "groestl":
+				hash = ComputeGroestl(blk.Serialize())
+			case "cryptonightv1":
+				hash = ComputeCryptonight(blk.Serialize(), 1)
+			case "cryptonightv2":
+				hash = ComputeCryptonight(blk.Serialize(), 2)
+			case "cryptonightR":
+			case "cryptonightv3":
+				hash = ComputeCryptonight(blk.Serialize(), 3)
+			case "skein":
+				hash = ComputeSkein(blk.Serialize())
 			}
 
 			current.SetBytes(Reverse(hash))
