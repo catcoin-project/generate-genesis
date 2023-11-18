@@ -17,7 +17,7 @@ import (
 	"lukechampine.com/blake3"
 
 	"github.com/aead/skein/skein256"
-	quark "github.com/mycroft/goquarkhash"
+	quark "github.com/catcoin-project/goquarkhash"
 	x11 "gitlab.com/nitya-sattva/go-x11"
 	"golang.org/x/crypto/scrypt"
 )
