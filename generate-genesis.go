@@ -10,6 +10,10 @@ import (
 	"runtime/pprof"
 	"strconv"
 
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/sha3"
+	"lukechampine.com/blake3"
+
 	quark "github.com/mycroft/goquarkhash"
 	x11 "gitlab.com/nitya-sattva/go-x11"
 	"golang.org/x/crypto/scrypt"
@@ -27,7 +31,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&algo, "algo", "sha256", "Algo to use: sha256, scrypt, x11, quark")
+	flag.StringVar(&algo, "algo", "sha256d", "Algo to use: sha256d, blake, blake3d, blake2b, sha3, keccak, scrypt, x11, quark")
 	flag.StringVar(&psz, "psz", "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks", "pszTimestamp")
 	flag.Uint64Var(&coins, "coins", uint64(50*100000000), "Number of coins")
 	flag.StringVar(&pubkey, "pubkey", "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f", "Pubkey (required)")
@@ -53,6 +57,37 @@ func ComputeScrypt(content []byte) []byte {
 	}
 
 	return scryptHash
+}
+
+func ComputeSHA3(content []byte) []byte {
+	out := make([]byte, 32)
+
+	h := sha3.New256()
+	h.Sum(out)
+
+	return out
+}
+
+func ComputeKeccak(content []byte) []byte {
+	out := make([]byte, 32)
+
+	h := sha3.NewLegacyKeccak256()
+
+	return h.Sum(out)
+}
+
+func ComputeBlake2b(content []byte) []byte {
+	h, _ := blake2b.New256(content)
+	return h.Sum(content)
+}
+
+func ComputeBlake3(content []byte) []byte {
+	out := make([]byte, 32)
+
+	hasher := blake3.New(256, nil)
+	hasher.Sum(out)
+
+	return out
 }
 
 func ComputeX11(content []byte) []byte {
@@ -184,8 +219,18 @@ func SearchWorker(jobs <-chan Job, results chan<- bool) {
 
 		for {
 			switch params.Algo {
-			case "sha256":
+			case "sha256d":
 				hash = ComputeSha256(ComputeSha256(blk.Serialize()))
+			case "blake3d":
+				hash = ComputeBlake3(ComputeBlake3(blk.Serialize()))
+			case "blake3":
+				hash = ComputeBlake3(blk.Serialize())
+			case "sha3":
+				hash = ComputeSHA3(blk.Serialize())
+			case "keccak":
+				hash = ComputeKeccak(blk.Serialize())
+			case "blake2b":
+				hash = ComputeBlake2b(blk.Serialize())
 			case "scrypt":
 				hash = ComputeScrypt(blk.Serialize())
 			case "x11":
