@@ -64,7 +64,7 @@ func CreateBlock(params *GenesisParams) *Block {
 
 	blk.Txs = append(blk.Txs, tx)
 
-	blk.Hash = ComputeSha256(ComputeSha256(blk.Serialize()))
+	// blk.Hash = ComputeSha256(ComputeSha256(blk.Serialize()))
 
 	return blk
 }

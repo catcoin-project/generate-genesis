@@ -52,17 +52,22 @@ func ComputeSha256(content []byte) []byte {
 	return m.Sum(nil)
 }
 
+// None of these appear to work, why???
+
 func ComputeCryptonight(content []byte, variant int) []byte {
 	return cryptonight.Sum(content, variant)
 }
 
 func ComputeGroestl(content []byte) []byte {
-	return groestl.New256().Sum(content)
+	h := groestl.New256()
+	h.Write(content)
+	return h.Sum(nil)
 }
 
 func ComputeSkein(content []byte) []byte {
-	h := skein256.New256(content)
-	return h.Sum(content)
+	h := skein256.New256(nil)
+	h.Write(content)
+	return h.Sum(nil)
 }
 
 func ComputeScrypt(content []byte) []byte {
@@ -76,34 +81,27 @@ func ComputeScrypt(content []byte) []byte {
 }
 
 func ComputeSHA3(content []byte) []byte {
-	out := make([]byte, 32)
-
 	h := sha3.New256()
-	h.Sum(out)
-
-	return out
+	h.Write(content)
+	return h.Sum(nil)
 }
 
 func ComputeKeccak(content []byte) []byte {
-	out := make([]byte, 32)
-
 	h := sha3.NewLegacyKeccak256()
-
-	return h.Sum(out)
+	h.Write(content)
+	return h.Sum(nil)
 }
 
 func ComputeBlake2b(content []byte) []byte {
-	h, _ := blake2b.New256(content)
-	return h.Sum(content)
+	h, _ := blake2b.New256(nil)
+	h.Write(content)
+	return h.Sum(nil)
 }
 
 func ComputeBlake3(content []byte) []byte {
-	out := make([]byte, 32)
-
-	hasher := blake3.New(256, nil)
-	hasher.Sum(out)
-
-	return out
+	hasher := blake3.New(32, nil)
+	hasher.Write(content)
+	return hasher.Sum(nil)
 }
 
 func ComputeX11(content []byte) []byte {
@@ -237,18 +235,28 @@ func SearchWorker(jobs <-chan Job, results chan<- bool) {
 			switch params.Algo {
 			case "sha256d":
 				hash = ComputeSha256(ComputeSha256(blk.Serialize()))
+				blk.Hash = hash
 			case "blake3d":
+				hash = ComputeBlake3(ComputeBlake3(blk.Serialize()))
+				blk.Hash = hash
 			case "cathash":
+				hash = ComputeBlake3(ComputeBlake3(blk.Serialize()))
+				blk.Hash = hash
 			case "meow":
 				hash = ComputeBlake3(ComputeBlake3(blk.Serialize()))
+				blk.Hash = hash
 			case "blake3":
 				hash = ComputeBlake3(blk.Serialize())
+				blk.Hash = hash
 			case "sha3":
 				hash = ComputeSHA3(blk.Serialize())
+				blk.Hash = hash
 			case "keccak":
 				hash = ComputeKeccak(blk.Serialize())
+				blk.Hash = hash
 			case "blake2b":
 				hash = ComputeBlake2b(blk.Serialize())
+				blk.Hash = hash
 			case "scrypt":
 				hash = ComputeScrypt(blk.Serialize())
 			case "x11":
@@ -259,15 +267,22 @@ func SearchWorker(jobs <-chan Job, results chan<- bool) {
 				blk.Hash = hash
 			case "groestl":
 				hash = ComputeGroestl(blk.Serialize())
+				blk.Hash = hash
 			case "cryptonightv1":
 				hash = ComputeCryptonight(blk.Serialize(), 1)
+				blk.Hash = hash
 			case "cryptonightv2":
 				hash = ComputeCryptonight(blk.Serialize(), 2)
+				blk.Hash = hash
 			case "cryptonightR":
+				hash = ComputeCryptonight(blk.Serialize(), 3)
+				blk.Hash = hash
 			case "cryptonightv3":
 				hash = ComputeCryptonight(blk.Serialize(), 3)
+				blk.Hash = hash
 			case "skein":
 				hash = ComputeSkein(blk.Serialize())
+				blk.Hash = hash
 			}
 
 			current.SetBytes(Reverse(hash))
