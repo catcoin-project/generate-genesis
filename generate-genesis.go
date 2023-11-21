@@ -52,7 +52,7 @@ func ComputeSha256(content []byte) []byte {
 	return m.Sum(nil)
 }
 
-// None of these appear to work, why???
+// Fixed old problems. Wrong parameters etc.
 
 func ComputeCryptonight(content []byte, variant int) []byte {
 	return cryptonight.Sum(content, variant)
